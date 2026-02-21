@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+venv/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+.gemini/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Local App Data
+brain/
+logs/

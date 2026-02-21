@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Friction IDE — AI Website Builder</title>
+  <meta name="description"
+    content="Friction IDE — Generate beautiful websites with AI. Type a prompt, get code, preview instantly." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/theme/dracula.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/htmlmixed/htmlmixed.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/css/css.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/xml/xml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/closetag.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/closebrackets.min.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <canvas id="bg-canvas"></canvas>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <!-- ═══ NAVBAR ═══ -->
+  <header class="navbar">
+    <div class="navbar-left">
+      <!-- Hamburger (mobile only) -->
+      <button id="btn-hamburger" class="hamburger" title="Toggle sidebar" aria-label="Toggle sidebar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+      <div class="brand">
+        <div class="brand-logo">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+        </div>
+        <span class="brand-name">Friction IDE</span>
+        <span class="brand-tag">AI BUILDER</span>
+      </div>
+    </div>
+    <div class="navbar-center">
+      <div id="conn-status" class="conn-pill">
+        <span class="conn-dot"></span>
+        <span class="conn-label">Connecting…</span>
+      </div>
+    </div>
+    <div class="navbar-right">
+      <button id="btn-save-file" class="nav-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+          <polyline points="17 21 17 13 7 13 7 21"></polyline>
+          <polyline points="7 3 7 8 15 8"></polyline>
+        </svg>
+        Save Project
+      </button>
+      <button id="btn-download" class="nav-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Download .zip
+      </button>
+      <button id="btn-clear" class="nav-btn nav-btn--danger">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6l-1 14H6L5 6"></path>
+        </svg>
+        Clear
+      </button>
+    </div>
+  </header>
+
+  <!-- ═══ WORKSPACE ═══ -->
+  <div class="workspace">
+
+    <!-- ── SIDEBAR ── -->
+    <aside class="sidebar">
+      <div class="sidebar-inner">
+
+        <!-- Quick Ideas -->
+        <div class="sb-section">
+          <p class="sb-label">⚡ QUICK IDEAS</p>
+          <div class="chips-list">
+            <button class="chip"
+              data-prompt="A modern portfolio website for a developer with dark theme, animated hero section, skills grid and contact form">🧑‍💻
+              Developer Portfolio</button>
+            <button class="chip"
+              data-prompt="A landing page for a coffee shop with warm colors, menu section, gallery and online order button">☕
+              Coffee Shop</button>
+            <button class="chip"
+              data-prompt="A SaaS pricing page with 3 tiers, feature comparison table, FAQ section and CTA button">💰
+              SaaS Pricing</button>
+            <button class="chip"
+              data-prompt="A beautiful weather app UI with glassmorphism design, animated weather icons and 5-day forecast">🌤️
+              Weather App</button>
+            <button class="chip"
+              data-prompt="A fitness gym landing page with hero video background, workout programs, trainers and membership plans">💪
+              Gym Landing</button>
+          </div>
+        </div>
+
+        <div class="sb-divider"></div>
+
+        <!-- Prompt Input -->
+        <div class="sb-section sb-section--prompt">
+          <p class="sb-label">📝 DESCRIBE YOUR WEBSITE</p>
+          <div class="prompt-box">
+            <textarea id="prompt-input" class="prompt-area"
+              placeholder="e.g. A stunning dark-mode portfolio for a UI designer with animated hero, project gallery, testimonials and contact form…"></textarea>
+            <div class="prompt-footer">
+              <span id="char-count" class="char-count">0 / 4000</span>
+              <div class="prompt-actions">
+                <span class="kbd-hint">Ctrl+Enter</span>
+                <button id="btn-generate" class="send-btn" title="Generate website">
+                  <span class="send-icon">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.4">
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                  </span>
+                  <span class="send-spinner hidden"><span class="spinner"></span></span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div id="status-bar" class="status-bar hidden"></div>
+        </div>
+
+        <div class="sb-divider"></div>
+
+        <!-- ══ CONFIG PANEL ══ -->
+        <div class="sb-section">
+          <button class="sb-label sb-collapsible" id="toggle-config">
+            <span>⚙️ Advanced Config</span>
+            <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+
+          <div class="config-panel" id="config-panel">
+
+            <!-- Database -->
+            <div class="config-group">
+              <label class="config-label">🗄️ Database</label>
+              <select class="config-select" id="db-select">
+                <option value="">No Database</option>
+                <option value="firebase">Firebase Realtime DB</option>
+                <option value="firestore">Firestore</option>
+                <option value="supabase">Supabase</option>
+                <option value="localstorage">LocalStorage (no backend)</option>
+                <option value="indexeddb">IndexedDB (offline)</option>
+              </select>
+            </div>
+
+            <!-- API Services -->
+            <div class="config-group">
+              <label class="config-label">🔌 API Services</label>
+              <div class="api-checkboxes" id="api-checkboxes">
+                <label class="api-check"><input type="checkbox" value="googlemaps" /> 🗺️ Google Maps</label>
+                <label class="api-check"><input type="checkbox" value="openweather" /> 🌦️ OpenWeather</label>
+                <label class="api-check"><input type="checkbox" value="stripe" /> 💳 Stripe Payments</label>
+                <label class="api-check"><input type="checkbox" value="emailjs" /> 📧 EmailJS</label>
+                <label class="api-check"><input type="checkbox" value="openai" /> 🤖 OpenAI ChatGPT</label>
+                <label class="api-check"><input type="checkbox" value="youtube" /> ▶️ YouTube Data</label>
+                <label class="api-check"><input type="checkbox" value="unsplash" /> 🖼️ Unsplash Images</label>
+                <label class="api-check"><input type="checkbox" value="custom" /> 🔧 Custom API</label>
+              </div>
+            </div>
+
+            <!-- Custom API URL -->
+            <div class="config-group" id="custom-api-group" style="display:none">
+              <label class="config-label">Custom API Endpoint</label>
+              <input type="text" class="config-input" id="custom-api-url" placeholder="https://your-api.com/endpoint" />
+            </div>
+
+            <!-- AI Agent -->
+            <div class="config-group">
+              <label class="config-label">🤖 AI Agent</label>
+              <div class="api-checkboxes" id="agent-checkboxes">
+                <label class="api-check"><input type="checkbox" value="gemini-agent" /> ⚡ Gemini Chatbot Widget</label>
+                <label class="api-check"><input type="checkbox" value="openai-agent" /> 🧠 OpenAI Chatbot Widget</label>
+                <label class="api-check"><input type="checkbox" value="n8n" /> 🔗 n8n Automation Webhook</label>
+                <label class="api-check"><input type="checkbox" value="webhook" /> 📡 Custom Webhook Agent</label>
+              </div>
+            </div>
+
+            <!-- Backend Server -->
+            <div class="config-group">
+              <label class="config-label">🖥️ Backend Server</label>
+              <select class="config-select" id="backend-select">
+                <option value="">No Backend</option>
+                <option value="flask">Flask (Python) — server.py</option>
+                <option value="node">Node.js + Express — server.js</option>
+              </select>
+              <p style="font-size:10.5px;color:var(--c-text-3);margin-top:4px;">Generates a ready-to-run backend server
+                file</p>
+            </div>
+
+          </div><!-- /config-panel -->
+        </div>
+
+        <div class="sb-divider"></div>
+
+        <!-- ══ SETUP GUIDE ══ -->
+        <div class="sb-section" id="guide-section" style="display:none">
+          <p class="sb-label">📖 Setup Guide</p>
+          <div class="guide-content" id="guide-content"></div>
+        </div>
+
+        <div class="sb-divider" id="guide-divider" style="display:none"></div>
+
+        <!-- History -->
+        <div class="sb-section">
+          <div class="sb-label-row">
+            <p class="sb-label">🕓 History</p>
+            <div id="ai-thinking" class="ai-thinking hidden">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+          <div class="history-list" id="history-list">
+            <p class="empty-state">No generations yet.</p>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- ── PANEL: Code Editor ── -->
+    <section class="panel panel--editor" id="panel-editor">
+      <div class="panel-bar">
+        <div class="panel-bar-left">
+          <span class="panel-icon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="16 18 22 12 16 6"></polyline>
+              <polyline points="8 6 2 12 8 18"></polyline>
+            </svg>
+          </span>
+          <span class="panel-title">Code Editor</span>
+          <div class="file-tabs" id="file-tabs">
+            <button class="file-tab file-tab--active" data-tab="html">
+              <span class="tab-dot tab-dot--html"></span>index.html
+            </button>
+            <button class="file-tab" data-tab="css">
+              <span class="tab-dot tab-dot--css"></span>style.css
+            </button>
+            <button class="file-tab" data-tab="js">
+              <span class="tab-dot tab-dot--js"></span>script.js
+            </button>
+            <button class="file-tab" data-tab="backend" id="tab-backend" style="display:none">
+              <span class="tab-dot tab-dot--backend"></span><span id="backend-tab-name">server.py</span>
+            </button>
+          </div>
+        </div>
+        <div class="panel-bar-right">
+          <button id="btn-copy-code" class="bar-btn" title="Copy current file">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            Copy
+          </button>
+          <button id="btn-format" class="bar-btn" title="Format code">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="21" y1="10" x2="7" y2="10"></line>
+              <line x1="21" y1="6" x2="3" y2="6"></line>
+              <line x1="21" y1="14" x2="3" y2="14"></line>
+              <line x1="21" y1="18" x2="7" y2="18"></line>
+            </svg>
+            Format
+          </button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="empty-panel" id="editor-placeholder">
+          <div class="empty-icon rotating-cube">
+            <div class="cube">
+              <div class="cf front"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.4">
+                  <polyline points="16 18 22 12 16 6"></polyline>
+                  <polyline points="8 6 2 12 8 18"></polyline>
+                </svg></div>
+              <div class="cf back"></div>
+              <div class="cf left"></div>
+              <div class="cf right"></div>
+              <div class="cf top"></div>
+              <div class="cf bottom"></div>
+            </div>
+          </div>
+          <p class="empty-title">No code yet</p>
+          <p class="empty-sub">Enter a prompt and hit Send ↗</p>
+        </div>
+        <textarea id="code-editor"></textarea>
+      </div>
+    </section>
+
+    <!-- ── PANEL: Live Preview ── -->
+    <section class="panel panel--preview" id="panel-preview">
+      <div class="panel-bar">
+        <div class="panel-bar-left">
+          <span class="panel-icon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+          </span>
+          <span class="panel-title">Live Preview</span>
+          <span class="preview-badge" id="preview-badge" style="display:none;">3 files</span>
+        </div>
+        <div class="panel-bar-right">
+          <button id="btn-refresh-preview" class="bar-btn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            Refresh
+          </button>
+          <button id="btn-open-tab" class="bar-btn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+            Open Tab
+          </button>
+        </div>
+      </div>
+      <div class="panel-body preview-body">
+        <div class="empty-panel" id="preview-placeholder">
+          <div class="empty-icon">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+              <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+          </div>
+          <p class="empty-title">No preview yet</p>
+          <p class="empty-sub">Generate a website to see it live</p>
+        </div>
+        <iframe id="preview-frame" class="preview-frame hidden" sandbox="allow-scripts allow-same-origin allow-forms"
+          title="Preview"></iframe>
+      </div>
+    </section>
+
+  </div><!-- /workspace -->
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Save Modal -->
+  <div id="save-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <h3 class="modal-title">Save Project</h3>
+      <p class="modal-desc">Files saved as <code>index.html</code>, <code>style.css</code>, <code>script.js</code></p>
+      <label class="modal-label">Project folder name</label>
+      <input type="text" id="save-filename" class="modal-input" value="my_website" />
+      <div class="modal-preview">
+        📁 generated/<span id="folder-preview">my_website</span>/<br>
+        &nbsp;&nbsp;├── index.html<br>
+        &nbsp;&nbsp;├── style.css<br>
+        &nbsp;&nbsp;└── script.js
+      </div>
+      <div class="modal-actions">
+        <button id="modal-cancel" class="modal-btn modal-btn--ghost">Cancel</button>
+        <button id="modal-save" class="modal-btn modal-btn--primary">Save Files</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drawer backdrop (mobile) -->
+  <div id="drawer-backdrop" class="drawer-backdrop"></div>
+
+  <!-- Mobile bottom nav -->
+  <nav class="mobile-nav" id="mobile-nav">
+    <button class="mobile-nav-btn active" id="mnav-prompt" data-panel="prompt">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+      </svg>
+      Prompt
+    </button>
+    <button class="mobile-nav-btn" id="mnav-editor" data-panel="editor">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <polyline points="16 18 22 12 16 6"></polyline>
+        <polyline points="8 6 2 12 8 18"></polyline>
+      </svg>
+      Code
+    </button>
+    <button class="mobile-nav-btn" id="mnav-preview" data-panel="preview">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+        <line x1="8" y1="21" x2="16" y2="21"></line>
+        <line x1="12" y1="17" x2="12" y2="21"></line>
+      </svg>
+      Preview
+    </button>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

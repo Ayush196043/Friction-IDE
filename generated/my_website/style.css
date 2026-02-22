@@ -1,0 +1,301 @@
+@charset "UTF-8";
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap");
+
+:root {
+  --primary-bg: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+  --card-bg: rgba(255, 255, 255, 0.08);
+  --border-color: rgba(255, 255, 255, 0.15);
+  --text-color: #e0e6f1;
+  --heading-color: #a8d5ff;
+  --accent-color: #61dafb; /* React blue */
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --strength-color: #4CAF50;
+  --weakness-color: #FF5722;
+  --strong-hire-color: #4CAF50;
+  --hire-color: #8BC34A;
+  --borderline-color: #FFC107;
+  --no-hire-color: #F44336;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Poppins", sans-serif;
+  line-height: 1.6;
+  color: var(--text-color);
+  background: var(--primary-bg);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px;
+  overflow-x: hidden;
+}
+
+.report-container {
+  background: var(--card-bg);
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 32px var(--shadow-color);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 30px;
+  max-width: 900px;
+  width: 100%;
+  margin: 20px 0;
+  animation: fadeIn 1s ease-out forwards;
+  transform: translateY(20px);
+  opacity: 0;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.report-header {
+  text-align: center;
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.report-header h1 {
+  font-family: "Montserrat", sans-serif;
+  color: var(--heading-color);
+  font-size: 2.5em;
+  margin-bottom: 10px;
+  text-shadow: 0 0 10px var(--accent-color);
+}
+
+.report-header .candidate-name,
+.report-header .interview-date {
+  font-size: 1.1em;
+  color: var(--text-color);
+}
+
+.report-section {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+  padding: 25px;
+  margin-bottom: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.report-section:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px var(--shadow-color);
+}
+
+.report-section h2 {
+  font-family: "Montserrat", sans-serif;
+  color: var(--accent-color);
+  font-size: 1.8em;
+  margin-bottom: 15px;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 10px;
+}
+
+.report-section p,
+.report-section li {
+  font-size: 1.05em;
+  margin-bottom: 10px;
+  line-height: 1.7;
+}
+
+.report-section ul,
+.report-section ol {
+  margin-left: 25px;
+  list-style-type: disc;
+}
+
+.report-section ol {
+  list-style-type: decimal;
+}
+
+.report-section li {
+  margin-bottom: 8px;
+}
+
+.overall-score .score-display {
+  font-family: "Montserrat", sans-serif;
+  font-size: 3em;
+  color: var(--heading-color);
+  text-align: center;
+  margin: 20px 0;
+  font-weight: 700;
+  text-shadow: 0 0 15px var(--accent-color);
+}
+
+.overall-score .score-value {
+  color: var(--accent-color);
+}
+
+.strengths ul {
+  list-style-type: "✅ ";
+}
+
+.strengths li {
+  color: var(--strength-color);
+}
+
+.weak-areas ul {
+  list-style-type: "❌ ";
+}
+
+.weak-areas li {
+  color: var(--weakness-color);
+}
+
+.improvement-roadmap ol,
+.study-plan ul {
+  list-style-position: inside;
+  padding-left: 0;
+}
+
+.improvement-roadmap li,
+.study-plan li {
+  margin-bottom: 12px;
+  padding-left: 10px;
+  border-left: 3px solid var(--accent-color);
+}
+
+.hiring-recommendation .recommendation-label {
+  font-weight: 600;
+  font-size: 1.2em;
+  margin-bottom: 5px;
+  color: var(--heading-color);
+}
+
+.hiring-recommendation .recommendation-status {
+  font-family: "Montserrat", sans-serif;
+  font-size: 2.2em;
+  font-weight: 700;
+  text-align: center;
+  padding: 10px 20px;
+  border-radius: 10px;
+  margin: 20px auto;
+  display: inline-block;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
+}
+
+.recommendation-status.strong-hire {
+  background-color: var(--strong-hire-color);
+  color: #fff;
+}
+
+.recommendation-status.hire {
+  background-color: var(--hire-color);
+  color: #fff;
+}
+
+.recommendation-status.borderline {
+  background-color: var(--borderline-color);
+  color: #333;
+}
+
+.recommendation-status.no-hire {
+  background-color: var(--no-hire-color);
+  color: #fff;
+}
+
+.report-footer {
+  text-align: center;
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.9em;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .report-container {
+    padding: 20px;
+    margin: 10px 0;
+  }
+
+  .report-header h1 {
+    font-size: 2em;
+  }
+
+  .report-section h2 {
+    font-size: 1.5em;
+  }
+
+  .overall-score .score-display {
+    font-size: 2.5em;
+  }
+
+  .hiring-recommendation .recommendation-status {
+    font-size: 1.8em;
+    padding: 8px 15px;
+  }
+
+  .report-section p,
+  .report-section li {
+    font-size: 0.95em;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 10px;
+  }
+
+  .report-container {
+    border-radius: 10px;
+    padding: 15px;
+  }
+
+  .report-header h1 {
+    font-size: 1.8em;
+  }
+
+  .report-header .candidate-name,
+  .report-header .interview-date {
+    font-size: 0.9em;
+  }
+
+  .report-section {
+    padding: 15px;
+    margin-bottom: 15px;
+  }
+
+  .report-section h2 {
+    font-size: 1.3em;
+    margin-bottom: 10px;
+  }
+
+  .overall-score .score-display {
+    font-size: 2em;
+    margin: 15px 0;
+  }
+
+  .hiring-recommendation .recommendation-status {
+    font-size: 1.5em;
+    padding: 6px 12px;
+  }
+
+  .report-section ul,
+  .report-section ol {
+    margin-left: 15px;
+  }
+
+  .report-section li {
+    margin-bottom: 6px;
+  }
+}

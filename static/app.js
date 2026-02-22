@@ -232,6 +232,67 @@ function initMobile() {
         mobilePanel = 'editor';
     }
 }
+// ═══════════════════════════════════════════════════════
+// 7.5 RESIZERS
+// ═══════════════════════════════════════════════════════
+function initResizers() {
+    const resizer1 = $('resizer-1');
+    const resizer2 = $('resizer-2');
+    const sidebar = document.querySelector('.sidebar');
+    const panelEditor = $('panel-editor');
+    const panelPreview = $('panel-preview');
+    const workspace = document.querySelector('.workspace');
+
+    if (!resizer1 || !resizer2 || isMobile()) return;
+
+    // Load saved widths
+    const savedLayout = JSON.parse(localStorage.getItem('friction_layout') || '{}');
+    if (savedLayout.sidebar) sidebar.style.width = savedLayout.sidebar + 'px';
+    if (savedLayout.editor) panelEditor.style.flex = `0 0 ${savedLayout.editor}px`;
+
+    function startResize(e, type) {
+        document.body.style.cursor = 'col-resize';
+        document.body.classList.add('resizing-active');
+        const startX = e.clientX;
+        const startW = type === 1 ? sidebar.offsetWidth : panelEditor.offsetWidth;
+        const resizer = type === 1 ? resizer1 : resizer2;
+        resizer.classList.add('dragging');
+
+        function onMouseMove(moveE) {
+            const dx = moveE.clientX - startX;
+            if (type === 1) {
+                const newW = Math.max(180, Math.min(600, startW + dx));
+                sidebar.style.width = newW + 'px';
+            } else {
+                const newW = Math.max(200, Math.min(window.innerWidth * 0.7, startW + dx));
+                panelEditor.style.flex = `0 0 ${newW}px`;
+            }
+            editorInstance?.refresh();
+        }
+
+        function onMouseUp() {
+            document.body.style.cursor = '';
+            document.body.classList.remove('resizing-active');
+            resizer.classList.remove('dragging');
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+
+            // Save layout
+            const layout = {
+                sidebar: sidebar.offsetWidth,
+                editor: panelEditor.offsetWidth
+            };
+            localStorage.setItem('friction_layout', JSON.stringify(layout));
+        }
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    }
+
+    resizer1.addEventListener('mousedown', e => startResize(e, 1));
+    resizer2.addEventListener('mousedown', e => startResize(e, 2));
+}
+
 window.addEventListener('resize', () => {
     if (!isMobile()) closeDrawer();
 });
@@ -531,13 +592,18 @@ async function generate() {
     }
 
     try {
-        // Clear previous files
-        files.html = ''; files.css = ''; files.js = ''; files.backend = '';
-
         const res = await fetch('/api/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt })
+            body: JSON.stringify({
+                prompt,
+                current_files: {
+                    html: files.html,
+                    css: files.css,
+                    js: files.js,
+                    backend: files.backend
+                }
+            })
         });
 
         const data = await res.json();
@@ -552,6 +618,11 @@ async function generate() {
         updatePreview();
 
         addHistory(userPrompt);
+
+        // Success UX
+        if (isMobile()) switchMobilePanel('preview'); // Auto-switch to preview on mobile
+        promptInput.value = ''; // Clear prompt for next instruction
+        promptInput.dispatchEvent(new Event('input'));
 
         const lines = (files.html + files.css + files.js + files.backend).split('\n').length;
         const fileCount = hasBackend ? '4 files' : '3 files';
@@ -757,4 +828,5 @@ document.addEventListener('DOMContentLoaded', () => {
     initEditor();
     checkConnection();
     initMobile();
+    initResizers();
 });

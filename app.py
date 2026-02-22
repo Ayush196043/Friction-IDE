@@ -10,27 +10,31 @@ load_dotenv(override=True)
 app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app)
 
-api_key = os.getenv("GEMINI_API_KEY", "")
-client = genai.Client(api_key=api_key) if api_key and api_key != 'your_gemini_api_key_here' else None
+def get_client():
+    """Dynamically get GenAI client using the latest environment variables."""
+    load_dotenv(override=True)
+    key = os.getenv("GEMINI_API_KEY", "")
+    if not key or key == 'your_gemini_api_key_here':
+        return None, ""
+    return genai.Client(api_key=key), key
 
-SYSTEM_PROMPT = """You are an expert web developer. When given a prompt, generate a COMPLETE, BEAUTIFUL, and FULLY FUNCTIONAL website split into separate files.
+SYSTEM_PROMPT = """You are an expert web developer. When given a prompt, you will either generate a COMPLETE website from scratch or MODIFY the existing code based on instructions.
 
-Return ONLY a valid JSON object with these keys:
+You must follow these rules strictly:
+1. MULTILINGUAL: Understand and respond to instructions in any language (Hinglish, Hindi, Spanish, etc.) but always return the final code structure in the specified JSON format.
+2. MOBILE-FIRST: Use modern, responsive CSS (media queries, flexbox, grid). Always include <meta name="viewport" content="width=device-width, initial-scale=1.0">.
+3. BEAUTIFUL: Use vibrant colors, glassmorphism, Google Fonts, and smooth animations (GSAP/CSS).
+4. NO MARKDOWN: Return ONLY a valid JSON object. No backticks, no markdown blocks.
+
+JSON Structure:
 {
-  "html": "...full HTML content (no <style> or <script> blocks, just structure)...",
+  "html": "...full HTML content (no <style> or <script> blocks, include link/script tags for style.css/script.js)...",
   "css": "...full CSS content...",
   "js": "...full JavaScript content...",
-  "backend": "...(Optional) full backend server code if requested..."
+  "backend": "...(Optional) backend code..."
 }
 
-Rules:
-- The HTML must NOT include <style> or <script> tags — those go in the separate css/js keys.
-- The HTML must include: <link rel="stylesheet" href="style.css"> in <head> and <script src="script.js"></script> before </body>.
-- Make designs stunning, modern, and visually impressive with smooth animations.
-- Use Google Fonts via @import in CSS, gradient backgrounds, glassmorphism effects.
-- Make it fully responsive for mobile and desktop.
-- Use vibrant colors and premium UI design.
-- Return ONLY the JSON object. No markdown, no ```json blocks, no explanation."""
+If you are modifying existing code, you MUST return the FULL content of all files, including unchanged parts, to ensure a functional project."""
 
 
 def extract_json(text: str) -> dict:
@@ -57,14 +61,25 @@ def health():
 def generate():
     try:
         data   = request.get_json()
-        print(f"Using API Key: {api_key[:8]}...{api_key[-4:]}")
+        client, current_api_key = get_client()
+        
+        if not client:
+            return jsonify({'error': 'GEMINI_API_KEY not set in .env file'}), 500
+            
+        print(f"Using API Key: {current_api_key[:8]}...{current_api_key[-4:]}")
         prompt = data.get('prompt', '').strip()
+        current_files = data.get('current_files', {}) # {html, css, js, backend}
 
         if not prompt:
             return jsonify({'error': 'Prompt is required'}), 400
 
-        if not client:
-            return jsonify({'error': 'GEMINI_API_KEY not set in .env file'}), 500
+        # Construct contextual prompt if files exist
+        full_user_prompt = prompt
+        if current_files and any(current_files.values()):
+            full_user_prompt = f"Existing Code Context:\n"
+            for name, content in current_files.items():
+                if content: full_user_prompt += f"--- FILE: {name} ---\n{content}\n"
+            full_user_prompt += f"\n\nNew Instructions: {prompt}\n\nPlease modify the existing code according to these instructions and return the full updated files."
 
         models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro']
         last_error = None
@@ -74,7 +89,7 @@ def generate():
                 print(f"🤖 Trying model: {model_name}...")
                 response = client.models.generate_content(
                     model=model_name,
-                    contents=prompt,
+                    contents=full_user_prompt,
                     config=types.GenerateContentConfig(
                         system_instruction=SYSTEM_PROMPT,
                         temperature=0.7,

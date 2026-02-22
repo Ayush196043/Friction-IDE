@@ -54,6 +54,7 @@ def index():
 
 @app.route('/api/health', methods=['GET'])
 def health():
+    client, _ = get_client()
     return jsonify({'status': 'ok', 'api_key_set': client is not None})
 
 

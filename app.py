@@ -2,10 +2,10 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from google import genai
 from google.genai import types
-import os, json, re
+import os, json, re, traceback
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app)
@@ -13,13 +13,14 @@ CORS(app)
 api_key = os.getenv("GEMINI_API_KEY", "")
 client = genai.Client(api_key=api_key) if api_key and api_key != 'your_gemini_api_key_here' else None
 
-SYSTEM_PROMPT = """You are an expert web developer. When given a prompt, generate a COMPLETE, BEAUTIFUL, and FULLY FUNCTIONAL website split into THREE separate files.
+SYSTEM_PROMPT = """You are an expert web developer. When given a prompt, generate a COMPLETE, BEAUTIFUL, and FULLY FUNCTIONAL website split into separate files.
 
-Return ONLY a valid JSON object with exactly these three keys:
+Return ONLY a valid JSON object with these keys:
 {
   "html": "...full HTML content (no <style> or <script> blocks, just structure)...",
   "css": "...full CSS content...",
-  "js": "...full JavaScript content..."
+  "js": "...full JavaScript content...",
+  "backend": "...(Optional) full backend server code if requested..."
 }
 
 Rules:
@@ -56,6 +57,7 @@ def health():
 def generate():
     try:
         data   = request.get_json()
+        print(f"Using API Key: {api_key[:8]}...{api_key[-4:]}")
         prompt = data.get('prompt', '').strip()
 
         if not prompt:
@@ -64,11 +66,12 @@ def generate():
         if not client:
             return jsonify({'error': 'GEMINI_API_KEY not set in .env file'}), 500
 
-        models_to_try = ['models/gemini-2.5-flash', 'models/gemini-2.0-flash', 'models/gemini-2.5-pro']
+        models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro']
         last_error = None
 
         for model_name in models_to_try:
             try:
+                print(f"🤖 Trying model: {model_name}...")
                 response = client.models.generate_content(
                     model=model_name,
                     contents=prompt,
@@ -89,6 +92,7 @@ def generate():
                 if not html_code:
                     raise ValueError("AI returned empty HTML")
 
+                print(f"✅ Success with model: {model_name}")
                 return jsonify({
                     'html': html_code, 
                     'css': css_code, 
@@ -96,19 +100,22 @@ def generate():
                     'backend': backend_code
                 })
 
-            except (json.JSONDecodeError, ValueError, KeyError):
+            except (json.JSONDecodeError, ValueError, KeyError) as e:
                 # Model didn't return valid JSON — try next
-                last_error = Exception("Model returned invalid JSON format")
+                print(f"⚠️ Model {model_name} returned invalid format. Shifting...")
+                last_error = Exception(f"Model {model_name} returned invalid JSON format: {e}")
                 continue
             except Exception as e:
                 last_error = e
                 if '429' in str(e) or 'RESOURCE_EXHAUSTED' in str(e) or '404' in str(e):
+                    print(f"🔄 Quota reached or model unavailable for {model_name}. Shifting to next model...")
                     continue
                 raise e
 
         return jsonify({'error': f'Generation failed: {last_error}'}), 500
 
     except Exception as e:
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 

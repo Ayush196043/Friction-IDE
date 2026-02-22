@@ -534,47 +534,22 @@ async function generate() {
         // Clear previous files
         files.html = ''; files.css = ''; files.js = ''; files.backend = '';
 
-        const htmlRes = await fetch('/api/generate', {
+        const res = await fetch('/api/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt, type: 'html', history: [] })
+            body: JSON.stringify({ prompt })
         });
-        const htmlData = await htmlRes.json();
-        if (!htmlRes.ok || htmlData.error) throw new Error(htmlData.error || 'HTML generation failed');
-        files.html = htmlData.content;
-        switchToTab('html'); // Show HTML immediately
+
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || 'Generation failed');
+
+        files.html = data.html || '';
+        files.css = data.css || '';
+        files.js = data.js || '';
+        files.backend = data.backend || '';
+
+        switchToTab('html');
         updatePreview();
-
-        const cssRes = await fetch('/api/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt, type: 'css', history: [{ role: 'assistant', content: files.html }] })
-        });
-        const cssData = await cssRes.json();
-        if (!cssRes.ok || cssData.error) throw new Error(cssData.error || 'CSS generation failed');
-        files.css = cssData.content;
-        updatePreview(); // Update preview with CSS
-
-        const jsRes = await fetch('/api/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt, type: 'js', history: [{ role: 'assistant', content: files.html + files.css }] })
-        });
-        const jsData = await jsRes.json();
-        if (!jsRes.ok || jsData.error) throw new Error(jsData.error || 'JS generation failed');
-        files.js = jsData.content;
-        updatePreview(); // Update preview with JS
-
-        if (hasBackend) {
-            const backendRes = await fetch('/api/generate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt, type: 'backend', history: [{ role: 'assistant', content: files.html + files.css + files.js }] })
-            });
-            const backendData = await backendRes.json();
-            if (!backendRes.ok || backendData.error) throw new Error(backendData.error || 'Backend generation failed');
-            files.backend = backendData.content;
-        }
 
         addHistory(userPrompt);
 
